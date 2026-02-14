@@ -73,48 +73,133 @@ See [docs/architecture.md](docs/architecture.md) for the full design.
 
 ## Features
 
-### 14 MCP Tools
+### 14 MCP Tools — Available Now
 
-| Category | Tools | Description |
-|----------|-------|-------------|
-| **Project** | `project_register`, `project_list`, `project_status` | Multi-project support with metadata |
-| **Memory** | `memory_set`, `memory_get`, `memory_list`, `memory_search`, `memory_delete` | Key-value store with topics and semantic search |
-| **Session** | `session_create`, `session_get`, `session_list`, `session_search` | Transcript storage with numbered sessions |
-| **File** | `file_index`, `file_search` | Source file indexing with function/type signatures |
+DevMemory provides 14 tools via the Model Context Protocol that Claude Code discovers automatically. Each tool is designed to return targeted results that reduce context token consumption.
+
+#### Project Management (3 tools)
+
+| Tool | What It Does | Token Impact |
+|------|-------------|--------------|
+| `project_register` | Register a project with ID, name, and root path | Enables scoped queries across multiple projects |
+| `project_list` | List all registered projects with metadata | Single call vs reading multiple config files |
+| `project_status` | Get memory/session/file counts, recent queries, savings | Full project overview in ~200 tokens |
+
+#### Memory Management (5 tools)
+
+Memories are key-value pairs organized by **topic** (e.g., `architecture`, `lessons`, `decisions`). Every memory is embedded for semantic search on write.
+
+| Tool | What It Does | Token Impact |
+|------|-------------|--------------|
+| `memory_set` | Store a memory with project, topic, key, value. UPSERT — safe to repeat. | Write operation, auto-embeds for future search |
+| `memory_get` | Retrieve a specific memory by exact topic + key | **~500 tokens** vs ~5,000 reading a full doc |
+| `memory_list` | List all memories for a project, optionally filtered by topic | Browse available knowledge without loading files |
+| `memory_search` | **Semantic + keyword search** across all memories in a project | **~500 tokens/result** vs reading 3-5 source files |
+| `memory_delete` | Remove a specific memory | Housekeeping |
+
+**Example — saves ~4,500 tokens:**
+```
+Without DevMemory:  Claude reads CLAUDE.md (3K) + architecture doc (5K) + ADR (2K) = ~10K tokens
+With DevMemory:     memory_search("database architecture") → 3 results = ~1,500 tokens
+```
+
+#### Session Management (4 tools)
+
+Sessions are numbered conversation transcripts — the full history of what was built, decided, and learned across development sessions.
+
+| Tool | What It Does | Token Impact |
+|------|-------------|--------------|
+| `session_create` | Save a session with number, title, summary, and optional full content | Captures session context for future recall |
+| `session_get` | Retrieve a specific session by number | **~2,000 tokens** vs ~10,000 reading a full transcript |
+| `session_list` | List all sessions with titles and dates | Quick overview of project history |
+| `session_search` | **Semantic + keyword search** across all session transcripts | **~2,000 tokens/result** vs loading multiple transcripts |
+
+**Example — saves ~21,000 tokens:**
+```
+Without DevMemory:  "Where did we leave off?" → Claude reads MEMORY.md (2K) + CLAUDE.md (3K) +
+                    last 2 transcripts (9K each) = ~23,000 tokens
+With DevMemory:     session_search("latest progress") → 2 results = ~4,000 tokens
+                    Actual first interaction: 27,900 tokens saved
+```
+
+#### File Indexing (2 tools)
+
+Index source files with function/type signatures for semantic code discovery — find relevant files without reading them all.
+
+| Tool | What It Does | Token Impact |
+|------|-------------|--------------|
+| `file_index` | Index a file with path, type, symbols (functions/types), and summary | Build searchable index of entire codebase |
+| `file_search` | **Semantic search** across indexed files by meaning | **~800 tokens/result** vs ~2,000+ reading each file |
+
+**Example — saves ~6,000 tokens:**
+```
+Without DevMemory:  "Which files handle PATCH?" → Claude runs Grep, reads 4 files = ~8,000 tokens
+With DevMemory:     file_search("PATCH request handling") → 3 results = ~2,400 tokens
+```
+
+### Hybrid Search Engine
+
+Every search query runs **two strategies in parallel**:
+
+1. **Semantic search** — pgvector HNSW cosine similarity on 384-dim embeddings. Finds conceptually related content even without exact keyword matches.
+2. **Full-text search** — PostgreSQL tsvector with English stemming. Catches exact terminology and acronyms.
+
+Results are merged by score. If the embedding service is unavailable, gracefully falls back to keyword-only search. No query ever fails.
 
 ### Web Dashboard (GOTH Stack)
 
-Live dashboard at `:8090` built with Go `html/template` + HTMX + Tailwind CSS (CDN, no build step).
+Live dashboard at `:8090` built with Go `html/template` + HTMX + Tailwind CSS (CDN, no build step). All panels auto-update every 5 seconds.
 
-| Page | Features |
-|------|----------|
-| **Dashboard** | Real-time stats (5s polling), project cards with query/token/cost metrics, token savings calculator with API + Pro subscription breakdowns |
-| **Search** | "Ask Anything" semantic search across all projects — memories, sessions, and files with relevance scores |
-| **History** | Session browser with project filter and drill-down to full transcript content |
-| **Memories** | Browse, create, edit, and delete memories by project and topic |
+| Page | What It Shows |
+|------|--------------|
+| **Dashboard** | Real-time stats grid (projects, memories, sessions, files), per-project cards with query counts + tokens saved + API cost saved, token savings calculator with both API pricing ($3/MTok) and Pro subscription context metrics |
+| **Search** | "Ask Anything" — debounced semantic search across memories, sessions, and files simultaneously, with relevance scores and expandable result details |
+| **History** | Session browser — select project, browse session list, drill down to full transcript content |
+| **Memories** | Full CRUD — browse by project/topic, create new memories, inline edit, delete with confirmation |
 
 ### CLI Tools
 
-| Command | Purpose |
-|---------|---------|
-| `devmemory` | Main MCP server (stdio/sse/web) |
-| `backfill` | Bulk-load project knowledge (specs, docs, transcripts, source files) |
-| `save-session` | Save a single session transcript |
+| Command | What It Does |
+|---------|-------------|
+| `devmemory` | Main MCP server — runs in stdio (Claude Code), SSE (remote), or web (dashboard) mode |
+| `backfill` | Bulk-load project knowledge: specs, docs, ADRs as memories; transcripts as sessions; Go files as file index. All with semantic embeddings. **128 items in 4 seconds.** |
+| `save-session` | Save a single session transcript with title, summary, and optional file content |
 
-### Usage Analytics
+### Usage Analytics & Savings Tracking
 
-Every MCP tool call is tracked with token estimation heuristics:
+Every MCP tool call is tracked automatically with token estimation heuristics:
 
-| Tool Type | Tokens per Result |
-|-----------|-------------------|
-| `memory_search` | 500 |
-| `session_search` | 2,000 |
-| `file_search` | 800 |
-| Other tools | 100 |
+| Tool Type | Est. Tokens Saved per Result | vs Alternative |
+|-----------|------------------------------|----------------|
+| `memory_search` | 500 | Reading a full doc/spec file (~5K) |
+| `session_search` | 2,000 | Reading a full transcript (~10K) |
+| `file_search` | 800 | Reading a source file (~2K) |
+| `memory_get` | 500 | Finding and reading the right doc |
+| `session_get` | 2,000 | Reading a full transcript file |
+| Other tools | 100 | Utility operations |
 
-The dashboard shows cumulative savings in both **API cost** ($3/MTok input, $15/MTok output at Sonnet 4.5 pricing) and **Pro subscription context** (tokens saved as a fraction of the 200K context window).
+The dashboard shows cumulative savings in two formats:
 
-See [docs/features.md](docs/features.md) for detailed tool documentation.
+- **API cost** — tokens saved x $3/MTok input, x $15/MTok output (Sonnet 4.5 pricing)
+- **Pro subscription** — tokens saved as a fraction of the 200K context window per interaction
+
+### Multi-Project Support
+
+All data is scoped by `project_id`. Register multiple projects and search each independently. The backfill tool loads entire project codebases in seconds. The dashboard shows per-project stats cards with individual savings tracking.
+
+### Three Transport Modes
+
+Single binary, three ways to run:
+
+| Mode | Use Case | How |
+|------|----------|-----|
+| `stdio` | Claude Code integration | MCP over stdin/stdout — Claude Code spawns it from `.mcp.json` |
+| `sse` | Remote/shared access | MCP over HTTP Server-Sent Events |
+| `web` | Live dashboard | HTTP + HTMX with 5-second polling |
+
+Run stdio and web simultaneously — stdio for Claude Code, web for monitoring savings in real-time.
+
+See [docs/features.md](docs/features.md) for full tool reference with parameter tables and examples.
 
 ---
 
@@ -348,25 +433,6 @@ Claude Code ──MCP──► DevMemory
 | **Query caching** | Cache frequent queries with TTL | Reduce DB load |
 | **Embedding model swap** | Support multiple embedding models (BGE, Nomic, etc.) | Flexibility |
 | **PostgreSQL LISTEN/NOTIFY** | Replace HTMX polling with real PG-level change notifications | True real-time dashboard |
-
----
-
-## Comparison with team-memory-infra
-
-DevMemory and [team-memory-infra](https://github.com/Platform-LSS/team-memory-infra) solve complementary problems:
-
-| Aspect | DevMemory | team-memory-infra |
-|--------|-----------|-------------------|
-| **Focus** | Application (MCP server + dashboard) | Infrastructure (AWS deployment) |
-| **Database** | PostgreSQL 16 + pgvector | PostgreSQL 17 + RuVector |
-| **MCP Tools** | 14 (built-in) | Delegates to `mcp-postgres-memory` |
-| **Schema** | 5 tables (multi-entity) | 1 table (embeddings only) |
-| **Dashboard** | Yes (HTMX, live) | None |
-| **Multi-user** | Single (local) | Yes (RLS + VPN) |
-| **Security** | None (local dev) | Full (mTLS, KMS, RLS, audit) |
-| **Deployment** | Docker Compose | AWS Terraform |
-
-**Natural evolution**: DevMemory's application layer deployed on team-memory-infra's AWS infrastructure would combine rich features with production-grade security.
 
 ---
 
