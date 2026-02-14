@@ -1,0 +1,50 @@
+{{define "_cost.html"}}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+  <div>
+    <p class="text-sm text-zinc-500">Queries Served</p>
+    <p class="text-2xl font-bold">{{comma .Stats.TotalQueries}}</p>
+  </div>
+  <div>
+    <p class="text-sm text-zinc-500">Context Tokens Saved</p>
+    <p class="text-2xl font-bold text-emerald-400">{{comma .Stats.TotalTokensSaved}}</p>
+    <p class="text-xs text-zinc-600">vs loading full files</p>
+  </div>
+  <div>
+    <p class="text-sm text-zinc-500">API Cost Saved</p>
+    <p class="text-2xl font-bold text-green-400">{{cost .Stats.TotalTokensSaved 3.0}}</p>
+    <p class="text-xs text-zinc-600">input @ $3/MTok</p>
+  </div>
+  <div>
+    <p class="text-sm text-zinc-500">Pro Context Saved</p>
+    <p class="text-2xl font-bold text-brand-400">{{div .Stats.TotalTokensSaved 1000}}K</p>
+    <p class="text-xs text-zinc-600">of 200K window per interaction</p>
+  </div>
+</div>
+<div class="mt-4 pt-4 border-t border-zinc-800">
+  <div class="grid grid-cols-2 gap-6">
+    <div class="bg-zinc-800/50 rounded-lg p-4">
+      <p class="text-xs text-zinc-500 uppercase tracking-wide mb-2">API Usage</p>
+      <div class="flex items-baseline gap-2">
+        <span class="text-lg font-bold text-green-400">{{cost .Stats.TotalTokensSaved 3.0}}</span>
+        <span class="text-xs text-zinc-500">input</span>
+        <span class="text-lg font-bold text-green-400 ml-2">{{cost .Stats.TotalTokensSaved 15.0}}</span>
+        <span class="text-xs text-zinc-500">output (est.)</span>
+      </div>
+      <p class="text-xs text-zinc-600 mt-1">Based on Sonnet 4.5 pricing</p>
+    </div>
+    <div class="bg-zinc-800/50 rounded-lg p-4">
+      <p class="text-xs text-zinc-500 uppercase tracking-wide mb-2">Pro Subscription</p>
+      <div class="flex items-baseline gap-2">
+        <span class="text-lg font-bold text-brand-400">~{{div .Stats.TotalTokensSaved 20000}}</span>
+        <span class="text-xs text-zinc-500">interactions worth of context saved</span>
+      </div>
+      <p class="text-xs text-zinc-600 mt-1">Each search returns ~500 tokens vs ~20K avg file load</p>
+    </div>
+  </div>
+</div>
+<div class="mt-3 text-xs text-zinc-600 flex items-center gap-3">
+  <span>Embedding: <span class="{{if eq .Stats.EmbeddingStatus ""}}text-yellow-400{{else}}text-emerald-400{{end}}">{{if .Stats.EmbeddingStatus}}{{.Stats.EmbeddingStatus}}{{else}}unknown{{end}}</span></span>
+  <span>&middot;</span>
+  <span>Savings = context tokens that didn't need to be loaded because DevMemory served targeted results</span>
+</div>
+{{end}}

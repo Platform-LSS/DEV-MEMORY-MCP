@@ -1,0 +1,25 @@
+{{define "_session_detail.html"}}
+<div class="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <span class="text-sm text-brand-400 font-bold">Session #{{.Session.SessionNum}}</span>
+      <h3 class="text-xl font-bold text-zinc-100">{{.Session.Title}}</h3>
+    </div>
+    <span class="text-xs text-zinc-600">{{timeAgo .Session.CreatedAt}}</span>
+  </div>
+
+  {{if .Session.Summary}}
+  <div class="mb-4 p-4 bg-zinc-800/50 rounded-lg">
+    <p class="text-sm font-medium text-zinc-400 mb-1">Summary</p>
+    <p class="text-sm text-zinc-300">{{.Session.Summary}}</p>
+  </div>
+  {{end}}
+
+  {{if .Session.Content}}
+  <div>
+    <p class="text-sm font-medium text-zinc-400 mb-2">Content</p>
+    <div class="text-sm text-zinc-300 whitespace-pre-wrap font-mono bg-zinc-800/30 p-4 rounded-lg max-h-[600px] overflow-y-auto">{{.Session.Content}}</div>
+  </div>
+  {{end}}
+</div>
+{{end}}

@@ -1,0 +1,51 @@
+{{define "content"}}
+<div>
+  <div class="flex items-center justify-between mb-6">
+    <h2 class="text-2xl font-bold">Dashboard</h2>
+    <div class="flex items-center gap-2 text-sm text-zinc-500">
+      <span class="w-2 h-2 rounded-full bg-emerald-500 pulse-dot"></span>
+      Live (5s polling)
+    </div>
+  </div>
+
+  <!-- Stats grid — HTMX polls every 5 seconds -->
+  <div hx-get="/api/stats" hx-trigger="every 5s" hx-swap="innerHTML">
+    {{template "_stats.html" .}}
+  </div>
+
+  <!-- Cost savings panel — also polls -->
+  <div class="mt-6">
+    <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Token Savings</h3>
+        <div class="flex gap-1">
+          {{range $p := (list "24h" "7d" "30d" "all")}}
+          <button hx-get="/api/stats?period={{$p}}" hx-target="#cost-panel" hx-swap="innerHTML"
+                  class="px-3 py-1 text-xs rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 transition-colors">
+            {{$p}}
+          </button>
+          {{end}}
+        </div>
+      </div>
+      <div id="cost-panel" hx-get="/api/cost" hx-trigger="every 5s" hx-swap="innerHTML">
+        {{template "_cost.html" .}}
+      </div>
+    </div>
+  </div>
+
+  <!-- Project cards — also polls -->
+  <div class="mt-6">
+    <h3 class="text-lg font-semibold mb-4">Projects</h3>
+    <div id="project-cards" hx-get="/api/projects" hx-trigger="every 5s" hx-swap="innerHTML">
+      {{range .Stats.Projects}}
+      {{template "_project_card.html" .}}
+      {{end}}
+      {{if not .Stats.Projects}}
+      <p class="text-zinc-500 col-span-3">No projects registered yet.</p>
+      {{end}}
+    </div>
+  </div>
+</div>
+{{end}}
+
+{{define "dashboard.html"}}{{template "layout.html" .}}{{end}}

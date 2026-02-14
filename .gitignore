@@ -1,0 +1,22 @@
+# Binaries (root level only)
+/devmemory
+/backfill
+/save-session
+*.exe
+*.test
+*.out
+
+# Environment
+.env
+
+# Dependencies
+vendor/
+
+# Build
+dist/
+
+# OS
+.DS_Store
+
+# Logs
+*.log

@@ -1,0 +1,30 @@
+{{define "content"}}
+<div>
+  <div class="mb-6">
+    <h2 class="text-2xl font-bold mb-1">Ask Anything</h2>
+    <p class="text-sm text-zinc-500">Search across all memories, sessions, and files</p>
+  </div>
+
+  <div class="relative mb-6">
+    <svg class="absolute left-4 top-3.5 w-5 h-5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+    </svg>
+    <input type="text" name="q" placeholder="Ask anything about your projects..."
+           class="w-full pl-12 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-lg"
+           hx-get="/api/search" hx-trigger="keyup changed delay:300ms" hx-target="#results"
+           hx-indicator="#spinner" autocomplete="off" />
+    <div id="spinner" class="htmx-indicator absolute right-4 top-3.5">
+      <svg class="animate-spin w-5 h-5 text-brand-500" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+      </svg>
+    </div>
+  </div>
+
+  <div id="results">
+    <p class="text-zinc-500 p-4">Start typing to search...</p>
+  </div>
+</div>
+{{end}}
+
+{{define "search.html"}}{{template "layout.html" .}}{{end}}

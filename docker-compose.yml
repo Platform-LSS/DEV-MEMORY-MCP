@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: devmemory
+      POSTGRES_USER: devmemory
+      POSTGRES_PASSWORD: devmemory
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devmemory"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  embed-svc:
+    build: ./embed-svc
+    ports:
+      - "8091:8091"
+    environment:
+      PORT: "8091"
+      MODEL_DIR: /model
+      MAX_LENGTH: "128"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8091/health')\""]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  devmemory:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+      embed-svc:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://devmemory:devmemory@postgres:5432/devmemory?sslmode=disable
+      TRANSPORT: sse  # Change to "web" for dashboard UI at http://localhost:8090
+      PORT: "8090"
+      EMBEDDING_URL: http://embed-svc:8091/embed
+      EMBEDDING_DIM: "384"
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+    ports:
+      - "8090:8090"
+
+volumes:
+  pgdata:

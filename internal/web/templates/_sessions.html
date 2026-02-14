@@ -1,0 +1,21 @@
+{{define "_sessions.html"}}
+{{if .Sessions}}
+<div class="space-y-2">
+  {{range .Sessions}}
+  <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-4 cursor-pointer hover:border-brand-500/50 transition-colors"
+       hx-get="/api/history/detail?project={{.ProjectID}}&num={{.SessionNum}}" hx-target="#session-detail" hx-swap="innerHTML">
+    <div class="flex items-center justify-between mb-1">
+      <span class="text-sm font-bold text-brand-400">#{{.SessionNum}}</span>
+      <span class="text-xs text-zinc-600">{{timeAgo .CreatedAt}}</span>
+    </div>
+    <p class="text-sm font-medium text-zinc-200 mb-1">{{.Title}}</p>
+    {{if .Summary}}
+    <p class="text-xs text-zinc-500 line-clamp-2">{{truncate .Summary 120}}</p>
+    {{end}}
+  </div>
+  {{end}}
+</div>
+{{else}}
+<p class="text-zinc-500 p-4">No sessions found</p>
+{{end}}
+{{end}}

@@ -1,0 +1,97 @@
+{{define "_search_results.html"}}
+<div class="space-y-6">
+  <div class="text-sm text-zinc-500">
+    Search: <span class="text-zinc-300">"{{.Query}}"</span>
+    <span class="ml-2 px-2 py-0.5 bg-zinc-800 rounded text-xs">{{.SearchType}}</span>
+  </div>
+
+  {{if .Memories}}
+  <div>
+    <h3 class="text-sm font-semibold text-emerald-400 mb-3 flex items-center gap-2">
+      <span class="text-lg">&#129504;</span> Memories ({{len .Memories}} results)
+    </h3>
+    <div class="space-y-2">
+      {{range .Memories}}
+      <details class="group">
+        <summary class="bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:border-zinc-700 transition-colors cursor-pointer list-none">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-sm font-medium text-zinc-300">{{.Topic}}/{{.Key}}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono {{scoreColor .Score}}">{{scorePct .Score}}%</span>
+              <span class="text-xs text-zinc-600">{{.ProjectID}}</span>
+            </div>
+          </div>
+          <p class="text-sm text-zinc-400">{{truncate .Value 150}}</p>
+        </summary>
+        <div class="mx-4 mb-2 p-4 bg-zinc-800/50 border-x border-b border-zinc-800 rounded-b-lg">
+          <p class="text-sm text-zinc-300 whitespace-pre-wrap">{{.Value}}</p>
+          <div class="mt-2 text-xs text-zinc-600">Updated {{timeAgo .UpdatedAt}}</div>
+        </div>
+      </details>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+
+  {{if .Sessions}}
+  <div>
+    <h3 class="text-sm font-semibold text-sky-400 mb-3 flex items-center gap-2">
+      <span class="text-lg">&#128203;</span> Sessions ({{len .Sessions}} results)
+    </h3>
+    <div class="space-y-2">
+      {{range .Sessions}}
+      <details class="group">
+        <summary class="bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:border-zinc-700 transition-colors cursor-pointer list-none">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-sm font-medium text-zinc-300">Session {{.SessionNum}}: {{.Title}}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono {{scoreColor .Score}}">{{scorePct .Score}}%</span>
+              <span class="text-xs text-zinc-600">{{.ProjectID}}</span>
+            </div>
+          </div>
+          {{if .Summary}}<p class="text-sm text-zinc-400">{{truncate .Summary 150}}</p>{{end}}
+        </summary>
+        <div class="mx-4 mb-2 p-4 bg-zinc-800/50 border-x border-b border-zinc-800 rounded-b-lg">
+          {{if .Summary}}<p class="text-sm text-zinc-300 mb-2"><strong>Summary:</strong> {{.Summary}}</p>{{end}}
+          <div class="mt-2 text-xs text-zinc-600">Created {{timeAgo .CreatedAt}}</div>
+          <a href="/history" class="mt-2 inline-block text-xs text-brand-400 hover:text-brand-300">View in History &rarr;</a>
+        </div>
+      </details>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+
+  {{if .Files}}
+  <div>
+    <h3 class="text-sm font-semibold text-amber-400 mb-3 flex items-center gap-2">
+      <span class="text-lg">&#128193;</span> Files ({{len .Files}} results)
+    </h3>
+    <div class="space-y-2">
+      {{range .Files}}
+      <details class="group">
+        <summary class="bg-zinc-900 border border-zinc-800 rounded-lg p-4 hover:border-zinc-700 transition-colors cursor-pointer list-none">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-sm font-medium text-zinc-300 font-mono">{{.FilePath}}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono {{scoreColor .Score}}">{{scorePct .Score}}%</span>
+              <span class="text-xs text-zinc-600">{{.ProjectID}}</span>
+            </div>
+          </div>
+          {{if .Summary}}<p class="text-sm text-zinc-400">{{truncate .Summary 150}}</p>{{end}}
+        </summary>
+        <div class="mx-4 mb-2 p-4 bg-zinc-800/50 border-x border-b border-zinc-800 rounded-b-lg">
+          {{if .Summary}}<p class="text-sm text-zinc-300 whitespace-pre-wrap">{{.Summary}}</p>{{end}}
+          {{if .FileType}}<div class="mt-2 text-xs text-zinc-600">Type: {{.FileType}}</div>{{end}}
+        </div>
+      </details>
+      {{end}}
+    </div>
+  </div>
+  {{end}}
+
+  {{if and (not .Memories) (not .Sessions) (not .Files)}}
+  <p class="text-zinc-500 p-4">No results found for "{{.Query}}"</p>
+  {{end}}
+</div>
+{{end}}

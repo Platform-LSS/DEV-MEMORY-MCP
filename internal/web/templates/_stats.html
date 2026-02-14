@@ -1,0 +1,20 @@
+{{define "_stats.html"}}
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+  <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+    <p class="text-sm text-zinc-500 mb-1">Projects</p>
+    <p class="text-3xl font-bold text-brand-400">{{.Stats.ProjectCount}}</p>
+  </div>
+  <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+    <p class="text-sm text-zinc-500 mb-1">Memories</p>
+    <p class="text-3xl font-bold text-emerald-400">{{comma .Stats.MemoryCount}}</p>
+  </div>
+  <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+    <p class="text-sm text-zinc-500 mb-1">Sessions</p>
+    <p class="text-3xl font-bold text-sky-400">{{comma .Stats.SessionCount}}</p>
+  </div>
+  <div class="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
+    <p class="text-sm text-zinc-500 mb-1">Files</p>
+    <p class="text-3xl font-bold text-amber-400">{{comma .Stats.FileCount}}</p>
+  </div>
+</div>
+{{end}}

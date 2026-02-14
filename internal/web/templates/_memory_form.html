@@ -1,0 +1,23 @@
+{{define "_memory_form.html"}}
+<div id="memory-{{.Memory.ID}}" class="bg-zinc-900 border border-brand-500/50 rounded-xl p-5">
+  <form hx-put="/api/memories/{{.Memory.ID}}" hx-target="#memory-{{.Memory.ID}}" hx-swap="outerHTML">
+    <div class="flex items-center gap-2 mb-3">
+      <span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-xs rounded">{{.Memory.Topic}}</span>
+      <span class="text-sm font-semibold text-zinc-200">{{.Memory.Key}}</span>
+    </div>
+    <textarea name="value" rows="4"
+              class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-100 text-sm focus:outline-none focus:border-brand-500 mb-3">{{.Memory.Value}}</textarea>
+    <div class="flex gap-2">
+      <button type="submit"
+              class="px-4 py-1.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium rounded-lg transition-colors">
+        Save
+      </button>
+      <button type="button"
+              hx-get="/api/memories?project={{.Memory.ProjectID}}&topic={{.Memory.Topic}}" hx-target="#memory-list" hx-swap="innerHTML"
+              class="px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-medium rounded-lg transition-colors">
+        Cancel
+      </button>
+    </div>
+  </form>
+</div>
+{{end}}
